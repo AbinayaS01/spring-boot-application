@@ -1,58 +1,99 @@
+
 package com.Handson.demo.service;
 
 import com.Handson.demo.model.Student;
+import com.Handson.demo.model.Department;
 import com.Handson.demo.repo.StudentRepo;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.Handson.demo.repo.DepartmentRepo;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class StudentService {
 
-//    @Autowired
-//    private StudentRepo studentRepo;
-
     private final StudentRepo studentRepo;
+    private final DepartmentRepo departmentRepo;
 
-    public StudentService(StudentRepo studentRepo){
-        this.studentRepo=studentRepo;
+    public StudentService(StudentRepo studentRepo,
+                          DepartmentRepo departmentRepo) {
+        this.studentRepo = studentRepo;
+        this.departmentRepo = departmentRepo;
     }
 
-    public Student addStudent(Student student){
+    // Add Student
+    public Student addStudent(Student student) {
+
+        if (student.getDepartment() == null ||
+                student.getDepartment().getId() == null) {
+            throw new RuntimeException("Department ID is required");
+        }
+
+        Long departmentId = student.getDepartment().getId();
+
+        Department department = departmentRepo.findById(departmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Department not found with ID: " + departmentId));
+
+        student.setDepartment(department);
+
         return studentRepo.save(student);
     }
 
-    public List<Student> getAllStudents(){
+    // Get All Students
+    public List<Student> getAllStudents() {
         return studentRepo.findAll();
     }
 
-    public Optional<Student> getStudentById(Long id){
-        return studentRepo.findById(id);
+    // Get Student By ID
+    public Student getStudentById(Long id) {
+        return studentRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Student not found with ID: " + id));
     }
 
-    public Student updateStudent(Long id, Student updatedStudent){
-        Student existingStudent=studentRepo.findById(id).orElseThrow(()->new RuntimeException("Student not found with ID: "+id));
+    // Update Student
+    public Student updateStudent(Long id, Student updatedStudent) {
+
+        Student existingStudent = studentRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Student not found with ID: " + id));
+
+        if (updatedStudent.getDepartment() == null ||
+                updatedStudent.getDepartment().getId() == null) {
+            throw new RuntimeException("Department ID is required");
+        }
+
+        Long departmentId = updatedStudent.getDepartment().getId();
+
+        Department department = departmentRepo.findById(departmentId)
+                .orElseThrow(() ->
+                        new RuntimeException("Department not found with ID: " + departmentId));
+
         existingStudent.setName(updatedStudent.getName());
         existingStudent.setEmail(updatedStudent.getEmail());
         existingStudent.setAge(updatedStudent.getAge());
+        existingStudent.setDepartment(department);
+
         return studentRepo.save(existingStudent);
     }
 
-    public void deleteStudent(Long id){
-        if(!studentRepo.existsById(id)){
-            throw new RuntimeException("student not found with ID: "+id);
-        }
-        studentRepo.deleteById(id);
+    // Delete Student
+    public void deleteStudent(Long id) {
+        Student student = studentRepo.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("Student not found with ID: " + id));
+
+        studentRepo.delete(student);
     }
-    public void deleteAllStudents(){
+
+    // Delete All Students
+    public void deleteAllStudents() {
         studentRepo.deleteAll();
     }
 
-    public long getStudentCount(){
+    // Get Student Count
+    public long getStudentCount() {
         return studentRepo.count();
     }
-
-    
 }
